@@ -1,0 +1,233 @@
+unit unitBelanja;
+
+interface
+
+uses
+  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
+  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.Layouts,
+  FMX.ListBox, FMX.Controls.Presentation, FMX.StdCtrls, FMX.Objects,
+  FMX.Memo.Types, FMX.ScrollBox, FMX.Memo,
+  IdHTTP, IdSSLOpenSSL, System.JSON, System.net.HttpClient;
+
+type
+  TformBelanja = class(TForm)
+    layoutData: TLayout;
+    labelNama: TLabel;
+    labelHarga: TLabel;
+    listBoxData: TListBox;
+    Label3: TLabel;
+    Image2: TImage;
+    fotoProduk: TImage;
+    buttonKeranjang: TImage;
+    indicatorLoading: TAniIndicator;
+    procedure FormCreate(Sender: TObject);
+    procedure buttonKeranjangClick(Sender: TObject);
+  private
+    { Private declarations }
+    procedure TampilList(IsiJSON: string);
+    procedure addItem(nama_produk, harga, foto_produk : string; id_produk : integer);
+    procedure LoadImageFromURL(const url: string);
+    procedure Loading(isEnable : boolean);
+
+  public
+    { Public declarations }
+  end;
+
+var
+  formBelanja: TformBelanja;
+
+implementation
+
+{$R *.fmx}
+
+uses
+  unitLogin, unitGlobal;
+
+{ TformHistori }
+
+
+function FormatRupiah(Harga: Integer): string;
+begin
+  Result := 'Rp. ' + FormatFloat('#,##0', Harga) + ',-';
+end;
+
+procedure TformBelanja.buttonKeranjangClick(Sender: TObject);
+var
+  id_produk, jumlah: Integer;
+  IdHTTP: TIdHTTP;
+  JSON: TStringStream;
+  Response: string;
+  JSONObj: TJSONObject;
+begin
+  id_produk := (Sender as TImage).Tag;
+  jumlah := 1;
+
+  IdHTTP := TIdHTTP.Create(nil);
+  try
+    IdHTTP.Request.CustomHeaders.AddValue('Authorization', globalToken);
+    JSON := TStringStream.Create(
+      '{"id_produk":"' + id_produk.ToString + '","jumlah":"' + jumlah.ToString + '"}', TEncoding.UTF8);
+    try
+//      Response := IdHTTP.Post('http://localhost/api_penjualan/api.php?type=cartItem', JSON);
+      Response := IdHTTP.Post('http://192.168.0.104/api_penjualan/api.php?type=cartItem', JSON);
+      JSONObj := TJSONObject.ParseJSONValue(Response) as TJSONObject;
+      if JSONObj <> nil then
+      try
+        ShowMessage(JSONObj.GetValue<string>('message'));
+      finally
+        JSONObj.Free;
+      end;
+    finally
+      JSON.Free;
+    end;
+  except
+    on E: Exception do
+      ShowMessage('Failed to add to cart: ' + E.Message);
+  end;
+  IdHTTP.Free;
+end;
+
+procedure TformBelanja.FormCreate(Sender: TObject);
+var
+  IdHTTP: TIdHTTP;
+  SSL: TIdSSLIOHandlerSocketOpenSSL;
+  Response: string;
+begin
+  listBoxData.Items.Clear;
+  layoutData.Visible := False;
+
+  IdHTTP := TIdHTTP.Create(nil);
+  SSL := TIdSSLIOHandlerSocketOpenSSL.Create(nil);
+  try
+//    Response := IdHTTP.Get('http://localhost/api_penjualan/api.php?type=productList');
+    Response := IdHTTP.Get('http://192.168.0.104/api_penjualan/api.php?type=productList');
+    TampilList(Response);
+  except
+    on E: Exception do
+      ShowMessage('Error: ' + E.Message);
+  end;
+  IdHTTP.Free;
+  SSL.Free;
+end;
+
+procedure TformBelanja.TampilList(IsiJSON: string);
+var
+  JSONValue: TJSONArray;
+  JSONItem: TJSONObject;
+//  i   : integer;
+  id_produk  : integer;
+  nama_produk, harga, foto_produk : string;
+  JSONList : TStringList;
+begin
+  listBoxData.Clear;
+  JSONList := TStringList.Create;
+  try
+    JSONValue := TJSONObject.ParseJSONValue(IsiJSON) as TJSONArray;
+
+    if Assigned(JSONValue) then
+    begin
+    TThread.CreateAnonymousThread(procedure
+      var i : Integer;
+      begin
+        Loading(true);
+        for i := 0 to JSONValue.Count - 1 do
+        begin
+          JSONItem := JSONValue.Items[i] as TJSONObject;
+          id_produk      := JSONItem.GetValue<Integer>('id_produk');
+          nama_produk    := JSONItem.GetValue<string>('nama_produk');
+          harga          := JSONItem.GetValue<string>('harga');
+          foto_produk    := JSONItem.GetValue<string>('foto_produk');
+  //        ShowMessage(id_produk.ToString + nama_produk + harga + foto_produk);
+  //        addItem(nama_produk, harga, 'http://localhost/api_penjualan/foto/' + foto_produk, id_produk);
+
+          TThread.Synchronize(TThread.CurrentThread, procedure
+          begin
+            addItem(nama_produk, harga, foto_produk, id_produk);
+          end);
+        end;
+        Loading(false);
+      end).Start;
+
+    end;
+  except
+    on E: Exception do
+
+  end;
+  JSONList.Free;
+end;
+
+procedure TformBelanja.addItem(nama_produk, harga, foto_produk : string; id_produk : integer);
+var
+  loClone : TLayout;
+  lb : TListBoxItem;
+  buttonKeranjangClone : TImage;
+  DefaultImage: TBitmap;
+  formattedHarga: string;
+
+begin
+  labelNama.Text := nama_produk;
+  formattedHarga := FormatRupiah(StrToInt(harga));
+  labelHarga.Text := formattedHarga;
+
+  if foto_produk <> '' then
+  begin
+    LoadImageFromURL('http://192.168.0.104/api_penjualan/foto/' + foto_produk);
+  end
+
+  else
+  begin
+    LoadImageFromURL('http://192.168.0.104/api_penjualan/foto/default.jpg');
+  end;
+
+
+  lb := TListBoxItem.Create(listBoxData);
+  lb.Width := listBoxData.Width;
+  lb.Height := layoutData.Height;
+  lb.Selectable := false;
+
+  loClone := TLayout(layoutData.Clone(lb));
+  loClone.Width := lb.Width - 32;
+  loClone.Position.X := 16;
+  loClone.Position.Y := 0;
+  loClone.Visible := true;
+
+  buttonKeranjangClone := TImage(buttonKeranjang.Clone(loClone));
+  buttonKeranjangClone.Parent := loClone;
+  buttonKeranjangClone.Position.X := buttonKeranjang.Position.X;
+  buttonKeranjangClone.Position.Y := buttonKeranjang.Position.Y;
+  buttonKeranjangClone.Width := buttonKeranjang.Width;
+  buttonKeranjangClone.Height := buttonKeranjang.Height;
+  buttonKeranjangClone.Tag := id_produk;
+  buttonKeranjangClone.OnClick := buttonKeranjangClick;
+
+  lb.AddObject(loClone);
+  listBoxData.AddObject(lb);
+end;
+
+procedure TformBelanja.LoadImageFromURL(const url: string);
+var
+  httpClient: THTTPClient;
+  memStream: TMemoryStream;
+begin
+  httpClient := THTTPClient.Create;
+  memStream := TMemoryStream.Create;
+  try
+    httpClient.Get(url, memStream);
+    memStream.Position := 0;
+    fotoProduk.Bitmap.LoadFromStream(memStream);
+  finally
+    memStream.Free;
+    httpClient.Free;
+  end;
+end;
+
+procedure TformBelanja.Loading(isEnable: boolean);
+begin
+  TThread.Synchronize(nil, procedure
+  begin
+       indicatorLoading.Enabled := isEnable;
+       indicatorLoading.Visible := isEnable;
+  end);
+end;
+
+end.

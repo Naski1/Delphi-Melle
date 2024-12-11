@@ -1,0 +1,176 @@
+unit unitDataPeserta;
+
+interface
+
+uses
+  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
+  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
+  FMX.Controls.Presentation, FMX.StdCtrls, FMX.Objects, FMX.Effects, FMX.Edit,
+  System.ImageList, FMX.ImgList, IdHTTP, IdSSLOpenSSL, System.JSON, System.net.HttpClient;
+
+type
+  TformDataPeserta = class(TForm)
+    Rectangle1: TRectangle;
+    Label3: TLabel;
+    Label1: TLabel;
+    labelNama: TLabel;
+    Label2: TLabel;
+    Label4: TLabel;
+    Label5: TLabel;
+    Label6: TLabel;
+    Label7: TLabel;
+    labelSekolah: TLabel;
+    labelAsrama: TLabel;
+    labelKamar: TLabel;
+    labelUsername: TLabel;
+    etPasswordBaru: TEdit;
+    Image2: TImage;
+    buttonGantiPassword: TCornerButton;
+    StyleBook1: TStyleBook;
+    imageData: TImage;
+    Label8: TLabel;
+    etPasswordLama: TEdit;
+    procedure FormCreate(Sender: TObject);
+    procedure buttonGantiPasswordClick(Sender: TObject);
+  private
+    { Private declarations }
+    procedure LoadImageFromURL(const url: string);
+  public
+    { Public declarations }
+  end;
+
+var
+  formDataPeserta: TformDataPeserta;
+
+implementation
+
+{$R *.fmx}
+uses
+  unitLogin, unitAdminPresensi, unitJadwal, unitPresensiHarian, unitDashboard;
+
+procedure TformDataPeserta.buttonGantiPasswordClick(Sender: TObject);
+var
+  IdHTTP: TIdHTTP;
+  SSL: TIdSSLIOHandlerSocketOpenSSL;
+  Response: string;
+  JSON: TStringStream;
+  passwordLama, passwordBaru, pesanJSON: string;
+  id_user: Integer;
+  JSONObj: TJSONObject;
+
+begin
+  // Ambil nilai dari form
+  id_user := formLogin.idPeserta;
+  passwordLama := etPasswordLama.Text;
+  passwordBaru := etPasswordBaru.Text;
+
+
+  // Inisialisasi objek HTTP dan SSL
+  IdHTTP := TIdHTTP.Create(nil);
+  SSL := TIdSSLIOHandlerSocketOpenSSL.Create(nil);
+  try
+    // Siapkan JSON request dengan id_user, password lama, dan password baru
+    JSON := TStringStream.Create(
+      '{"id_user":"' + id_user.ToString + '","password_lama":"' + passwordLama + '","password_baru":"' + passwordBaru + '"}',
+      TEncoding.UTF8);
+
+    try
+      // Kirim request PUT ke API untuk update password
+      Response := IdHTTP.Put('http://drive.smknj.sch.id/api.php?type=peserta&id_user=' + IntToStr(formLogin.idPeserta), JSON);
+//       Response := IdHTTP.Put('http://localhost/api_absensi/api.php?type=peserta&id_user=' + IntToStr(formLogin.idPeserta), JSON);
+
+      // Parsing JSON response
+      JSONObj := TJSONObject.ParseJSONValue(Response) as TJSONObject;
+      if JSONObj <> nil then
+      try
+        pesanJSON := JSONObj.GetValue<string>('message');
+        ShowMessage(pesanJSON); // Tampilkan pesan hasil
+      finally
+        JSONObj.Free;
+      end;
+    finally
+      JSON.Free;
+    end;
+  except
+    on E: Exception do
+      ShowMessage('Error: ' + E.Message);
+  end;
+
+  // Bersihkan objek setelah selesai
+  IdHTTP.Free;
+  SSL.Free;
+  etPasswordBaru.Text := '';
+  etPasswordLama.Text := '';
+
+end;
+procedure TformDataPeserta.FormCreate(Sender: TObject);
+var
+  IdHTTP: TIdHTTP;
+  SSL: TIdSSLIOHandlerSocketOpenSSL;
+  Response: string;
+  JSONObj: TJSONObject;
+  DefaultImage: TBitmap;
+begin
+  // Inisialisasi objek HTTP dan SSL
+  IdHTTP := TIdHTTP.Create(nil);
+  SSL := TIdSSLIOHandlerSocketOpenSSL.Create(nil);
+  try
+    // Set IOHandler jika menggunakan HTTPS (opsional)
+    // IdHTTP.IOHandler := SSL;
+
+    // Kirim request GET ke API dengan parameter id_user
+    Response := IdHTTP.Get('http://drive.smknj.sch.id/api.php?type=peserta&id=' + IntToStr(formLogin.idPeserta));
+//    Response := IdHTTP.Get('http://localhost/api_absensi/api.php?type=peserta&id=' + IntToStr(formLogin.idPeserta));
+
+    // Parsing JSON response
+    JSONObj := TJSONObject.ParseJSONValue(Response) as TJSONObject;
+    if JSONObj <> nil then
+    try
+          // Menampilkan data user
+          labelNama.Text := JSONObj.GetValue<string>('nama');
+          labelSekolah.text := JSONObj.GetValue<string>('asal_sekolah');
+          labelAsrama.Text := JSONObj.GetValue<string>('asrama');
+          labelKamar.Text := JSONObj.GetValue<string>('kamar');
+          labelUsername.Text := JSONObj.GetValue<string>('username');
+
+          DefaultImage := TBitmap.Create;
+          try
+            LoadImageFromURL('http://localhost/api_absensi/foto/' + JSONObj.GetValue<string>('foto'));
+          except
+            on E: Exception do
+            begin
+              LoadImageFromURL('http://localhost/api_absensi/foto/images.png');
+            end;
+          end;
+          // Anda bisa juga mengisi data ini ke form profil user
+
+        finally
+      JSONObj.Free;
+    end;
+  except
+    on E: Exception do
+//      ShowMessage('Error: ' + E.Message);
+  end;
+
+  // Bebaskan objek setelah selesai
+  IdHTTP.Free;
+  SSL.Free;
+end;
+
+procedure TformDataPeserta.LoadImageFromURL(const url: string);
+var
+  httpClient: THTTPClient;
+  memStream: TMemoryStream;
+begin
+  httpClient := THTTPClient.Create;
+  memStream := TMemoryStream.Create;
+  try
+    httpClient.Get(url, memStream);
+    memStream.Position := 0;
+    imageData.Bitmap.LoadFromStream(memStream);
+  finally
+    memStream.Free;
+    httpClient.Free;
+  end;
+end;
+end.

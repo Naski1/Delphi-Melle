@@ -1,0 +1,24 @@
+program ProjekAbsensi;
+
+uses
+  System.StartUpCopy,
+  FMX.Forms,
+  unitLogin in 'unitLogin.pas' {formLogin},
+  unitDashboard in 'unitDashboard.pas' {formDashboard},
+  unitJadwal in 'unitJadwal.pas' {formJadwal},
+  unitDataPeserta in 'unitDataPeserta.pas' {formDataPeserta},
+  unitPresensiHarian in 'unitPresensiHarian.pas' {formPresensi},
+  unitAdminPresensi in 'unitAdminPresensi.pas' {formAdminPresensi};
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.CreateForm(TformLogin, formLogin);
+  Application.CreateForm(TformDashboard, formDashboard);
+  Application.CreateForm(TformJadwal, formJadwal);
+  Application.CreateForm(TformDataPeserta, formDataPeserta);
+  Application.CreateForm(TformPresensi, formPresensi);
+  Application.CreateForm(TformAdminPresensi, formAdminPresensi);
+  Application.Run;
+end.

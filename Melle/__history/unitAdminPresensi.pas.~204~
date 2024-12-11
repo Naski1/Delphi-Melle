@@ -1,0 +1,524 @@
+unit unitAdminPresensi;
+
+interface
+
+uses
+  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
+  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
+  FMX.Controls.Presentation, FMX.StdCtrls, FMX.Objects, FMX.TabControl,
+  System.ImageList, FMX.ImgList, FMX.Layouts, FMX.ListBox,
+  IdHTTP, IdSSLOpenSSL, System.JSON, System.net.HttpClient,
+  DateUtils;
+
+type
+  TformAdminPresensi = class(TForm)
+    Rectangle1: TRectangle;
+    S: TLabel;
+    menuSesi: TTabControl;
+    tabSesiPertama: TTabItem;
+    tabSesiKedua: TTabItem;
+    buttonSesiPertama: TButton;
+    Image2: TImage;
+    StyleBook1: TStyleBook;
+    ImageList1: TImageList;
+    buttonSesiKedua: TButton;
+    layoutDataSesiKedua: TLayout;
+    Label5: TLabel;
+    Label6: TLabel;
+    labelNamaSesiKedua: TLabel;
+    labelSekolahSesiKedua: TLabel;
+    Label9: TLabel;
+    labelStatusSesiKedua: TLabel;
+    buttonSakitSesiKedua: TCornerButton;
+    buttonIzinSesiKedua: TCornerButton;
+    Label16: TLabel;
+    labelNamaPelatihan: TLabel;
+    Label22: TLabel;
+    labelTanggal: TLabel;
+    listBoxSesiKedua: TListBox;
+    listBoxSesiPertama: TListBox;
+    layoutDataSesiPertama: TLayout;
+    Label1: TLabel;
+    Label2: TLabel;
+    labelNamaSesiPertama: TLabel;
+    labelSekolahSesiPertama: TLabel;
+    Label7: TLabel;
+    labelStatusSesiPertama: TLabel;
+    buttonSakitSesiPertama: TCornerButton;
+    buttonIzinSesiPertama: TCornerButton;
+    procedure FormCreate(Sender: TObject);
+    procedure buttonSesiPertamaClick(Sender: TObject);
+    procedure buttonSesiKeduaClick(Sender: TObject);
+    procedure buttonSakitSesiPertamaClick(Sender: TObject);
+    procedure buttonIzinSesiPertamaClick(Sender: TObject);
+    procedure buttonSakitSesiKeduaClick(Sender: TObject);
+    procedure buttonIzinSesiKeduaClick(Sender: TObject);
+  private
+    { Private declarations }
+    procedure tampilPresensiSesiKedua(idJadwal: string);
+    procedure tampilPresensiSesiPertama(idJadwal: string);
+    procedure addItemSesiPertama(id_user, nama, asal_sekolah, status: string);
+    procedure addItemSesiKedua(id_user, nama, asal_sekolah, status: string);
+    procedure Tampil(IsiJSON: string);
+    procedure editStatus(id_user, id_jadwal, status: String);
+    var
+      id_jadwalSesiPertama, id_jadwalSesiKedua: String;
+  public
+    { Public declarations }
+  end;
+
+var
+  formAdminPresensi: TformAdminPresensi;
+
+implementation
+
+{$R *.fmx}
+{$R *.LgXhdpiTb.fmx ANDROID}
+{$R *.LgXhdpiPh.fmx ANDROID}
+{$R *.NmXhdpiPh.fmx ANDROID}
+
+uses
+  unitLogin, unitDashboard, unitJadwal, unitPresensiHarian, unitDataPeserta;
+
+procedure TformAdminPresensi.FormCreate(Sender: TObject);
+var
+  IdHTTP: TIdHTTP;
+  SSL: TIdSSLIOHandlerSocketOpenSSL;
+  Response: string;
+begin
+  buttonSakitSesiPertama.Visible := false;
+  buttonIzinSesiPertama.Visible := false;
+  buttonSakitSesiKedua.Visible := false;
+  buttonIzinSesiKedua.Visible := false;
+
+  layoutDataSesiPertama.Visible := False;
+  layoutDataSesiKedua.Visible := False;
+  menuSesi.ActiveTab := tabSesiPertama;
+   // Menampilkan tab default (sesi pertama)
+  IdHTTP := TIdHTTP.Create(nil);
+  SSL := TIdSSLIOHandlerSocketOpenSSL.Create(nil);
+  try
+//    Response := IdHTTP.Get('http://localhost/api_absensi/api.php?type=jadwalAdmin&id_user=' + formLogin.idPeserta.ToString);
+    Response := IdHTTP.Get('http://drive.smknj.sch.id/api.php?type=jadwalAdmin&id_user=' + formLogin.idPeserta.ToString); // Sesuaikan URL dan parameter id_user
+    Tampil(Response);
+  except
+    on E: Exception do
+      ShowMessage('Error: ' + E.Message);
+  end;
+  IdHTTP.Free;
+  SSL.Free;
+end;
+
+procedure TformAdminPresensi.Tampil(IsiJSON: string);
+var
+  JSONValue: TJSONObject;
+  JSONData: TJSONObject;
+  sesiStatusObj: TJSONObject;
+  Sesi1Status, Sesi2Status: string;
+  nama_pelatihan, tanggal: string;
+begin
+  try
+    JSONValue := TJSONObject.ParseJSONValue(IsiJSON) as TJSONObject;
+    if Assigned(JSONValue) then
+    begin
+      if JSONValue.TryGetValue<TJSONObject>('data', JSONData) then
+      begin
+        nama_pelatihan := JSONData.GetValue<string>('nama_pelatihan');
+        tanggal := JSONData.GetValue<string>('tanggal');
+        labelNamaPelatihan.Text := nama_pelatihan;
+        labelTanggal.Text := tanggal;
+        if JSONData.TryGetValue<TJSONObject>('sesi_status', sesiStatusObj) then
+        begin
+          Sesi1Status := sesiStatusObj.GetValue<string>('sesi_1.status');
+          Sesi2Status := sesiStatusObj.GetValue<string>('sesi_2.status');
+
+          if Sesi1Status = 'aktif' then
+          begin
+            buttonSesiPertama.Enabled := false;
+            id_jadwalSesiPertama := sesiStatusObj.GetValue<string>('sesi_1.id_jadwal');
+            tampilPresensiSesiPertama(id_jadwalSesiPertama);
+          end
+          else
+            buttonSesiKedua.Enabled := false;
+
+          if Sesi2Status = 'aktif' then
+          begin
+            buttonSesiKedua.Enabled := false;
+            id_jadwalSesiKedua := sesiStatusObj.GetValue<string>('sesi_2.id_jadwal');
+            tampilPresensiSesiKedua(id_jadwalSesiKedua);
+          end
+          else
+            tabSesiKedua.Enabled := false;
+
+          if (Sesi1Status = 'belum') and (Sesi2Status = 'belum')  then
+            menuSesi.Visible := false;
+
+        end
+        else
+        begin
+          ShowMessage('Tidak ada sesi yang aktif untuk hari ini');
+        end;
+      end;
+    end;
+
+  except
+    on E: Exception do
+      ShowMessage('Error: ' + E.Message);
+  end;
+end;
+
+procedure TFormAdminPresensi.tampilPresensiSesiPertama(idJadwal: string);
+var
+  IdHTTP: TIdHTTP;
+  Response: string;
+  JSONValue: TJSONArray;
+  JSONItem: TJSONObject;
+  SSL: TIdSSLIOHandlerSocketOpenSSL;
+  i: Integer;
+  id_user, nama, asal_sekolah, status: string;
+begin
+  IdHTTP := TIdHTTP.Create(nil);
+  SSL := TIdSSLIOHandlerSocketOpenSSL.Create(nil);
+  try
+    Response := IdHTTP.Get('http://drive.smknj.sch.id/api.php?type=tampilPresensi&id_jadwal=' + idJadwal);
+//    Response := IdHTTP.Get('http://localhost/api_absensi/api.php?type=tampilPresensi&id_jadwal=' + idJadwal);
+    JSONValue := TJSONObject.ParseJSONValue(Response) as TJSONArray;
+    if Assigned(JSONValue) then
+    begin
+      for i := 0 to JSONValue.Count - 1 do
+      begin
+        JSONItem := JSONValue.Items[i] as TJSONObject;
+        id_user        := JSONItem.GetValue<string>('id_user');
+        nama           := JSONItem.GetValue<string>('nama');
+        asal_sekolah   := JSONItem.GetValue<string>('asal_sekolah');
+        status         := JSONItem.GetValue<string>('status');
+
+        addItemSesiPertama(id_user, nama, asal_sekolah, status);
+      end;
+      buttonSakitSesiPertama.Visible := false;
+      buttonIzinSesiPertama.Visible := false;
+    end;
+  except
+    on E: Exception do
+      ShowMessage('Error: ' + E.Message);
+  end;
+  IdHTTP.Free;
+  SSL.Free;
+end;
+
+procedure TformAdminPresensi.buttonIzinSesiKeduaClick(Sender: TObject);
+var id_user : Integer;
+begin
+  id_user := (Sender as TCornerButton).Tag;
+  editStatus(id_user.ToString, id_jadwalSesiKedua, 'Izin');
+end;
+
+procedure TformAdminPresensi.buttonIzinSesiPertamaClick(Sender: TObject);
+var id_user : Integer;
+begin
+  id_user := (Sender as TCornerButton).Tag;
+  editStatus(id_user.ToString, id_jadwalSesiPertama, 'Izin');
+end;
+
+procedure TformAdminPresensi.buttonSakitSesiKeduaClick(Sender: TObject);
+var id_user : Integer;
+begin
+  id_user := (Sender as TCornerButton).Tag;
+  editStatus(id_user.ToString, id_jadwalSesiKedua, 'Sakit');
+end;
+
+procedure TformAdminPresensi.buttonSakitSesiPertamaClick(Sender: TObject);
+var id_user : Integer;
+begin
+  id_user := (Sender as TCornerButton).Tag;
+  editStatus(id_user.ToString, id_jadwalSesiPertama, 'Sakit');
+end;
+
+procedure TformAdminPresensi.editStatus(id_user, id_jadwal, status: String);
+var
+  IdHTTP: TIdHTTP;
+  SSL: TIdSSLIOHandlerSocketOpenSSL;
+  Response: string;
+  JSON: TStringStream;
+  pesanJSON : string;
+  JSONObj: TJSONObject;
+begin
+  IdHTTP := TIdHTTP.Create(nil);
+  SSL := TIdSSLIOHandlerSocketOpenSSL.Create(nil);
+  try
+    JSON := TStringStream.Create(
+      '{"id_user":"' + id_user + '","id_jadwal":"' + id_jadwal + '","status":"' + status + '"}',
+      TEncoding.UTF8);
+    try
+      Response := IdHTTP.Put('http://drive.smknj.sch.id/api.php?type=jadwalAdmin', JSON);
+//      Response := IdHTTP.Put('http://localhost/api_absensi/api.php?type=jadwalAdmin', JSON);
+      JSONObj := TJSONObject.ParseJSONValue(Response) as TJSONObject;
+      if JSONObj <> nil then
+      try
+        pesanJSON := JSONObj.GetValue<string>('message');
+        ShowMessage(pesanJSON);
+        self.Close;
+        Application.CreateForm(TformAdminPresensi, formAdminPresensi);
+        formAdminPresensi.Show;
+      finally
+        JSONObj.Free;
+      end;
+    finally
+      JSON.Free;
+    end;
+  except
+    on E: Exception do
+      ShowMessage('Error: ' + E.Message);
+  end;
+
+  IdHTTP.Free;
+  SSL.Free;
+end;
+
+procedure TformAdminPresensi.buttonSesiKeduaClick(Sender: TObject);
+var
+  IdHTTP: TIdHTTP;
+  SSL: TIdSSLIOHandlerSocketOpenSSL;
+  Response: string;
+  JSON: TStringStream;
+  id_user, sesi, pesanJSON : string;
+  JSONObj: TJSONObject;
+begin
+  id_user := formLogin.idPeserta.ToString;
+  sesi := '2';
+
+  IdHTTP := TIdHTTP.Create(nil);
+  SSL := TIdSSLIOHandlerSocketOpenSSL.Create(nil);
+  try
+//    IdHTTP.IOHandler := SSL;
+    JSON := TStringStream.Create(
+      '{"id_user":"' + id_user + '","sesi":"' + sesi + '"}',
+      TEncoding.UTF8);
+    try
+      Response := IdHTTP.Post('http://drive.smknj.sch.id/api.php?type=jadwalAdmin', JSON);
+//      Response := IdHTTP.Post('http://localhost/api_absensi/api.php?type=jadwalAdmin', JSON);
+      JSONObj := TJSONObject.ParseJSONValue(Response) as TJSONObject;
+      if JSONObj <> nil then
+      try
+        pesanJSON := JSONObj.GetValue<string>('message');
+        ShowMessage(pesanJSON);
+        self.Close;
+        Application.CreateForm(TformAdminPresensi, formAdminPresensi);
+        formAdminPresensi.Show;
+      finally
+        JSONObj.Free;
+      end;
+    finally
+      JSON.Free;
+    end;
+  except
+    on E: Exception do
+      ShowMessage('Error: ' + E.Message);
+  end;
+end;
+
+procedure TformAdminPresensi.buttonSesiPertamaClick(Sender: TObject);
+var
+  IdHTTP: TIdHTTP;
+  SSL: TIdSSLIOHandlerSocketOpenSSL;
+  Response: string;
+  JSON: TStringStream;
+  id_user, sesi, pesanJSON : string;
+  JSONObj: TJSONObject;
+begin
+  id_user := formLogin.idPeserta.ToString;
+  sesi := '1';
+
+  IdHTTP := TIdHTTP.Create(nil);
+  SSL := TIdSSLIOHandlerSocketOpenSSL.Create(nil);
+  try
+//    IdHTTP.IOHandler := SSL;
+    JSON := TStringStream.Create(
+      '{"id_user":"' + id_user + '","sesi":"' + sesi + '"}',
+      TEncoding.UTF8);
+    try
+      Response := IdHTTP.Post('http://drive.smknj.sch.id/api.php?type=jadwalAdmin', JSON);
+//      Response := IdHTTP.Post('http://localhost/api_absensi/api.php?type=jadwalAdmin', JSON);
+      JSONObj := TJSONObject.ParseJSONValue(Response) as TJSONObject;
+      if JSONObj <> nil then
+      try
+        pesanJSON := JSONObj.GetValue<string>('message');
+        ShowMessage(pesanJSON);
+        self.Close;
+        Application.CreateForm(TformAdminPresensi, formAdminPresensi);
+        formAdminPresensi.Show;
+      finally
+        JSONObj.Free;
+      end;
+    finally
+      JSON.Free;
+    end;
+  except
+    on E: Exception do
+      ShowMessage('Error: ' + E.Message);
+  end;
+end;
+
+
+
+procedure TFormAdminPresensi.tampilPresensiSesiKedua(idJadwal: string);
+var
+  IdHTTP: TIdHTTP;
+  Response: string;
+  JSONValue: TJSONArray;
+  JSONItem: TJSONObject;
+  SSL: TIdSSLIOHandlerSocketOpenSSL;
+  i: Integer;
+  id_user, nama, asal_sekolah, status: string;
+begin
+  IdHTTP := TIdHTTP.Create(nil);
+  SSL := TIdSSLIOHandlerSocketOpenSSL.Create(nil);
+  try
+    Response := IdHTTP.Get('http://drive.smknj.sch.id/api.php?type=tampilPresensi&id_jadwal=' + idJadwal);
+//    Response := IdHTTP.Get('http://localhost/api_absensi/api.php?type=tampilPresensi&id_jadwal=' + idJadwal);
+    JSONValue := TJSONObject.ParseJSONValue(Response) as TJSONArray;
+    if Assigned(JSONValue) then
+    begin
+      for i := 0 to JSONValue.Count - 1 do
+      begin
+        JSONItem := JSONValue.Items[i] as TJSONObject;
+        id_user       := JSONItem.GetValue<string>('id_user');
+        nama          := JSONItem.GetValue<string>('nama');
+        asal_sekolah  := JSONItem.GetValue<string>('asal_sekolah');
+        status        := JSONItem.GetValue<string>('status');
+
+        addItemSesiKedua(id_user, nama, asal_sekolah, status);
+      end;
+    end;
+  except
+    on E: Exception do
+      ShowMessage('Error: ' + E.Message);
+  end;
+  IdHTTP.Free;
+  SSL.Free;
+end;
+
+procedure TFormAdminPresensi.addItemSesiPertama(id_user, nama, asal_sekolah, status: string);
+var
+  loClone: TLayout;
+  lb: TListBoxItem;
+  buttonSakitClone, buttonIzinClone: TCornerButton;
+begin
+  labelNamaSesiPertama.Text := ': ' + nama;
+  labelSekolahSesiPertama.Text := ': ' + asal_sekolah;
+  labelStatusSesiPertama.Text := ': ' + status;
+
+  lb := TListBoxItem.Create(ListBoxSesiPertama); // ListBox untuk sesi kedua
+  lb.Width := ListBoxSesiPertama.Width;
+  lb.Height := layoutDataSesiPertama.Height;
+  lb.Selectable := false;
+
+  loClone := TLayout(layoutDataSesiPertama.Clone(lb));
+  loClone.Width := lb.Width - 32;
+  loClone.Position.X := 16;
+  loClone.Position.Y := 0;
+  loClone.Visible := true;
+
+  if status = 'Alpha' then
+  begin
+    buttonSakitSesiPertama.Visible := true;
+    buttonSakitClone := TCornerButton(buttonSakitSesiPertama.Clone(loClone));
+    buttonSakitClone.Parent := loClone;
+    buttonSakitClone.Position.X := buttonSakitSesiPertama.Position.X;
+    buttonSakitClone.Position.Y := buttonSakitSesiPertama.Position.Y;
+    buttonSakitClone.Width := buttonSakitSesiPertama.Width;
+    buttonSakitClone.Height := buttonSakitSesiPertama.Height;
+    buttonSakitClone.Tag := id_user.ToInteger;
+    buttonSakitClone.OnClick := buttonSakitSesiPertamaClick;
+    buttonSakitClone.Visible := true;
+
+    buttonIzinSesiPertama.Visible := true;
+    buttonIzinClone := TCornerButton(buttonIzinSesiPertama.Clone(loClone));
+    buttonIzinClone.Parent := loClone;
+    buttonIzinClone.Position.X := buttonIzinSesiPertama.Position.X;
+    buttonIzinClone.Position.Y := buttonIzinSesiPertama.Position.Y;
+    buttonIzinClone.Width := buttonIzinSesiPertama.Width;
+    buttonIzinClone.Height := buttonIzinSesiPertama.Height;
+    buttonIzinClone.Tag := id_user.ToInteger;
+    buttonIzinClone.OnClick := buttonIzinSesiPertamaClick;
+    buttonIzinClone.Visible := true
+  end
+  else
+  begin
+    // Hide buttons if status is not 'Alpha'
+    buttonSakitClone := TCornerButton(buttonSakitSesiPertama.Clone(loClone));
+    buttonSakitClone.Parent := loClone;
+    buttonSakitClone.Visible := False;
+
+    buttonIzinClone := TCornerButton(buttonIzinSesiPertama.Clone(loClone));
+    buttonIzinClone.Parent := loClone;
+    buttonIzinClone.Visible := False;
+  end;
+
+  lb.AddObject(loClone);
+  ListBoxSesiPertama.AddObject(lb);
+end;
+
+procedure TFormAdminPresensi.addItemSesiKedua(id_user, nama, asal_sekolah, status: string);
+var
+  loClone: TLayout;
+  lb: TListBoxItem;
+  buttonSakitClone, buttonIzinClone: TCornerButton;
+begin
+  labelNamaSesiKedua.Text := ': ' + nama;
+  labelSekolahSesiKedua.Text := ': ' + asal_sekolah;
+  labelStatusSesiKedua.Text := ': ' + status;
+
+  lb := TListBoxItem.Create(ListBoxSesiKedua); // ListBox untuk sesi kedua
+  lb.Width := ListBoxSesiKedua.Width;
+  lb.Height := layoutDataSesiKedua.Height;
+  lb.Selectable := false;
+
+  loClone := TLayout(layoutDataSesiKedua.Clone(lb));
+  loClone.Width := lb.Width - 32;
+  loClone.Position.X := 16;
+  loClone.Position.Y := 0;
+  loClone.Visible := true;
+
+  if status = 'Alpha' then
+  begin
+    buttonSakitSesiKedua.Visible := true;
+    buttonSakitClone := TCornerButton(buttonSakitSesiKedua.Clone(loClone));
+    buttonSakitClone.Parent := loClone;
+    buttonSakitClone.Position.X := buttonSakitSesiKedua.Position.X;
+    buttonSakitClone.Position.Y := buttonSakitSesiKedua.Position.Y;
+    buttonSakitClone.Width := buttonSakitSesiKedua.Width;
+    buttonSakitClone.Height := buttonSakitSesiKedua.Height;
+    buttonSakitClone.Tag := id_user.ToInteger;
+    buttonSakitClone.OnClick := buttonSakitSesiKeduaClick;
+    buttonSakitClone.Visible := true;
+
+    buttonIzinSesiKedua.Visible := true;
+    buttonIzinClone := TCornerButton(buttonIzinSesiKedua.Clone(loClone));
+    buttonIzinClone.Parent := loClone;
+    buttonIzinClone.Position.X := buttonIzinSesiKedua.Position.X;
+    buttonIzinClone.Position.Y := buttonIzinSesiKedua.Position.Y;
+    buttonIzinClone.Width := buttonIzinSesiKedua.Width;
+    buttonIzinClone.Height := buttonIzinSesiKedua.Height;
+    buttonIzinClone.Tag := id_user.ToInteger;
+    buttonIzinClone.OnClick := buttonIzinSesiKeduaClick;
+    buttonIzinClone.Visible := true
+  end
+  else
+  begin
+    // Hide buttons if status is not 'Alpha'
+    buttonSakitClone := TCornerButton(buttonSakitSesiKedua.Clone(loClone));
+    buttonSakitClone.Parent := loClone;
+    buttonSakitClone.Visible := False;
+
+    buttonIzinClone := TCornerButton(buttonIzinSesiKedua.Clone(loClone));
+    buttonIzinClone.Parent := loClone;
+    buttonIzinClone.Visible := False;
+  end;
+
+  lb.AddObject(loClone);
+  ListBoxSesiKedua.AddObject(lb);
+end;
+
+
+end.

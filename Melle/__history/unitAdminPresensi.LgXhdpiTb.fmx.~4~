@@ -1,0 +1,117 @@
+inherited formAdminPresensi_LgXhdpiTb: TformAdminPresensi_LgXhdpiTb
+  ClientHeight = 829
+  ClientWidth = 480
+  DesignerMasterStyle = 3
+  inherited menuSesi: TTabControl
+    Sizes = (
+      390s
+      562s
+      390s
+      562s)
+    inherited tabSesiI: TTabItem
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+      ExplicitSize.cx = 102.000000000000000000
+      ExplicitSize.cy = 49.000000000000000000
+      inherited layoutData1: TLayout
+        inherited labelNama: TLabel
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited labelAsalSekolah: TLabel
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited labelStatus1: TLabel
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited buttonSakit1: TCornerButton
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited buttonIzin1: TCornerButton
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+      end
+      inherited layoutData2: TLayout
+        inherited Label13: TLabel
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited Label14: TLabel
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited labelStatus2: TLabel
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited buttonIzin2: TCornerButton
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited buttonSakit2: TCornerButton
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+      end
+      inherited layoutData3: TLayout
+        inherited Label19: TLabel
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited Label20: TLabel
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited labelStatus3: TLabel
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited buttonSakit3: TCornerButton
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited buttonIzin3: TCornerButton
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+      end
+    end
+    inherited tabSesiKedua: TTabItem
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+      ExplicitSize.cx = 99.000000000000000000
+      ExplicitSize.cy = 49.000000000000000000
+      inherited Layout1: TLayout
+        inherited Label7: TLabel
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited Label8: TLabel
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited Label10: TLabel
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited CornerButton1: TCornerButton
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited CornerButton2: TCornerButton
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+      end
+    end
+  end
+  inherited Rectangle1: TRectangle
+    inherited Label3: TLabel
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+    end
+    inherited Image2: TImage
+      MultiResBitmap.Height = 389
+      MultiResBitmap.Width = 641
+    end
+  end
+  inherited buttonSesiPertama: TButton
+    TextSettings.Font.StyleExt = {00070000000000000004000000}
+  end
+  inherited buttonSesiKedua: TButton
+    TextSettings.Font.StyleExt = {00070000000000000004000000}
+  end
+  inherited Label16: TLabel
+    TabOrder = 11
+  end
+  inherited labelNamaPelatihan: TLabel
+    TextSettings.Font.StyleExt = {00070000000000000004000000}
+  end
+  inherited Label22: TLabel
+    TabOrder = 10
+  end
+  inherited labelTanggal: TLabel
+    TextSettings.Font.StyleExt = {00070000000000000004000000}
+  end
+end

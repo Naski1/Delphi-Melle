@@ -1,0 +1,10 @@
+unit uGlobal;
+
+interface
+
+var
+  globalToken: string;
+
+implementation
+
+end.

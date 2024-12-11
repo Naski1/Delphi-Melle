@@ -1,0 +1,14 @@
+unit unitGlobal;
+
+interface
+
+var
+  globalToken: string;
+  server: string;
+
+implementation
+
+begin
+  server := 'http://172.21.8.209/';
+
+end.

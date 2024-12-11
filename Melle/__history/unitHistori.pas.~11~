@@ -1,0 +1,134 @@
+unit unitHistori;
+
+interface
+
+uses
+  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
+  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.Layouts,
+  FMX.ListBox, FMX.Controls.Presentation, FMX.StdCtrls, FMX.Objects,
+  FMX.Memo.Types, FMX.ScrollBox, FMX.Memo,
+  IdHTTP, IdSSLOpenSSL, System.JSON, System.net.HttpClient;
+
+type
+  TformHistori = class(TForm)
+    layoutData: TLayout;
+    Label1: TLabel;
+    Label2: TLabel;
+    labelHari: TLabel;
+    labelTanggal: TLabel;
+    Label4: TLabel;
+    labelSesi: TLabel;
+    Label6: TLabel;
+    Label7: TLabel;
+    labelStatus: TLabel;
+    labelMateri: TLabel;
+    listBoxData: TListBox;
+    Label3: TLabel;
+    Image2: TImage;
+    Label5: TLabel;
+    memoCatatan: TMemo;
+    procedure FormCreate(Sender: TObject);
+  private
+    { Private declarations }
+    procedure addItem(hari, tanggal, sesi, materi, status, catatan: string);
+    procedure TampilList(IsiJSON: string);
+  public
+    { Public declarations }
+  end;
+
+var
+  formHistori: TformHistori;
+
+implementation
+
+{$R *.fmx}
+
+uses
+  unitLogin;
+
+{ TformHistori }
+
+procedure TformHistori.addItem(hari, tanggal, sesi, materi, status, catatan: string);
+var
+  loClone: TLayout;
+  lb: TListBoxItem;
+begin
+  // Menampilkan data pada label di dalam layout item list
+  labelHari.Text := ': ' + hari;
+  labelTanggal.Text := ': ' + tanggal;
+  labelSesi.Text := ': ' + sesi;
+  labelMateri.Text := ': ' + materi;
+  labelStatus.Text := ': ' + status;
+  memoCatatan.Text := catatan;
+
+  // Membuat item list baru untuk setiap jadwal
+  lb := TListBoxItem.Create(listBoxData);
+  lb.Width := listBoxData.Width;
+  lb.Height := layoutData.Height;
+  lb.Selectable := false;
+
+  // Clone layout dari template yang sudah ada
+  loClone := TLayout(layoutData.Clone(lb));
+  loClone.Width := lb.Width - 32;
+  loClone.Position.X := 16;
+  loClone.Position.Y := 0;
+  loClone.Visible := true;
+
+  // Menambahkan layout item ke dalam ListBox
+  lb.AddObject(loClone);
+  listBoxData.AddObject(lb);
+end;
+
+procedure TformHistori.FormCreate(Sender: TObject);
+var
+  IdHTTP: TIdHTTP;
+  SSL: TIdSSLIOHandlerSocketOpenSSL;
+  Response: string;
+begin
+  layoutData.Visible := False;
+  IdHTTP := TIdHTTP.Create(nil);
+  SSL := TIdSSLIOHandlerSocketOpenSSL.Create(nil);
+  try
+    Response := IdHTTP.Get('http://localhost/api_absensi/api.php?type=jadwal&id_user=' + formLogin.idPeserta.ToString); // Sesuaikan URL dan parameter id_user
+    TampilList(Response);
+  except
+    on E: Exception do
+//      ShowMessage('Error: ' + E.Message);
+  end;
+  IdHTTP.Free;
+  SSL.Free;
+end;
+
+procedure TformHistori.TampilList(IsiJSON: string);
+var
+  JSONValue: TJSONArray;
+  JSONItem: TJSONObject;
+  i: Integer;
+  hari, tanggal, sesi, materi, tempat, status, catatan: string;
+begin
+  listBoxData.Clear;
+
+  try
+    JSONValue := TJSONObject.ParseJSONValue(IsiJSON) as TJSONArray;
+    if Assigned(JSONValue) then
+    begin
+      for i := 0 to JSONValue.Count - 1 do
+      begin
+        JSONItem := JSONValue.Items[i] as TJSONObject;
+        hari           := JSONItem.GetValue<string>('hari');
+        tanggal        := JSONItem.GetValue<string>('tanggal');
+        sesi           := JSONItem.GetValue<string>('sesi');
+        materi         := JSONItem.GetValue<string>('materi');
+        status         := JSONItem.GetValue<string>('status');
+        catatan        := JSONItem.GetValue<string>('catatan');
+
+        addItem(hari, tanggal, sesi, materi, status, catatan) // Sesuaikan parameter untuk addItem
+      end;
+    end;
+  except
+    on E: Exception do
+      ShowMessage('Error: ' + E.Message);
+  end;
+end;
+
+end.

@@ -1,0 +1,95 @@
+inherited formAdminPresensi_LgXhdpiPh: TformAdminPresensi_LgXhdpiPh
+  ClientHeight = 695
+  ClientWidth = 450
+  DesignerMasterStyle = 3
+  inherited menuSesi: TTabControl
+    Sizes = (
+      390s
+      551s
+      390s
+      551s)
+    inherited tabSesiPertama: TTabItem
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+      ExplicitSize.cx = 102.000000000000000000
+      ExplicitSize.cy = 49.000000000000000000
+      inherited listBoxDataSesiPertama: TListBox
+        Position.X = -2.000000476837158000
+        Size.Width = 403.000091552734400000
+        Viewport.Width = 433.000000000000000000
+        Viewport.Height = 634.000000000000000000
+      end
+      inherited layoutDataSesiPertama: TLayout
+        inherited labelNamaSesiPertama: TLabel
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited labelSekolahSesiPertama: TLabel
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited labelStatusSesiPertama: TLabel
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited buttonSakitSesiPertama: TCornerButton
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited buttonIzinSesiPertama: TCornerButton
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+      end
+    end
+    inherited tabSesiKedua: TTabItem
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+      ExplicitSize.cx = 99.000000000000000000
+      ExplicitSize.cy = 49.000000000000000000
+      inherited listBoxDatraSesiKedua: TListBox
+        Position.X = -13.000002861022950000
+        Size.Width = 403.000091552734400000
+        Viewport.Width = 403.000000000000000000
+        Viewport.Height = 553.000000000000000000
+      end
+      inherited layoutDataSesiKedua: TLayout
+        inherited labelNamaSesiKedua: TLabel
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited labelSekolahSesiKedua: TLabel
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited labelStatusSesiKedua: TLabel
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited buttonSakitSesiKedua: TCornerButton
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+        inherited buttonIzinSesiKedua: TCornerButton
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+        end
+      end
+    end
+  end
+  inherited Rectangle1: TRectangle
+    inherited S: TLabel
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+    end
+    inherited Image2: TImage
+      MultiResBitmap.Height = 389
+      MultiResBitmap.Width = 641
+    end
+  end
+  inherited buttonSesiPertama: TButton
+    TextSettings.Font.StyleExt = {00070000000000000004000000}
+  end
+  inherited buttonSesiKedua: TButton
+    TextSettings.Font.StyleExt = {00070000000000000004000000}
+  end
+  inherited Label16: TLabel
+    TabOrder = 10
+  end
+  inherited labelNamaPelatihan: TLabel
+    TextSettings.Font.StyleExt = {00070000000000000004000000}
+  end
+  inherited Label22: TLabel
+    TabOrder = 9
+  end
+  inherited labelTanggal: TLabel
+    TextSettings.Font.StyleExt = {00070000000000000004000000}
+  end
+end

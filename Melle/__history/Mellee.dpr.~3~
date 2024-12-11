@@ -1,0 +1,27 @@
+program Mellee;
+
+uses
+  System.StartUpCopy,
+  FMX.Forms,
+  unitLogin in 'unitLogin.pas' {formLogin},
+  unitDashboard in 'unitDashboard.pas' {formDashboard},
+  unitDataUser in 'unitDataUser.pas' {formJadwal},
+  unitRegister in 'unitRegister.pas' {formRegister},
+  unitPresensiHarian in 'unitPresensiHarian.pas' {formPresensi},
+  unitAdminPresensi in 'unitAdminPresensi.pas' {formAdminPresensi},
+  unitHistori in 'unitHistori.pas' {formHistori};
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.FormFactor.Orientations := [TFormOrientation.Portrait];
+  Application.CreateForm(TformLogin, formLogin);
+  Application.CreateForm(TformDashboard, formDashboard);
+  Application.CreateForm(TformJadwal, formJadwal);
+  Application.CreateForm(TformRegister, formRegister);
+  Application.CreateForm(TformPresensi, formPresensi);
+  Application.CreateForm(TformAdminPresensi, formAdminPresensi);
+  Application.CreateForm(TformHistori, formHistori);
+  Application.Run;
+end.

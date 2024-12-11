@@ -1,0 +1,31 @@
+inherited formLogin_LgXhdpiTb: TformLogin_LgXhdpiTb
+  ClientHeight = 829
+  ClientWidth = 480
+  DesignerMasterStyle = 3
+  inherited editPassword: TEdit
+    TextSettings.Font.StyleExt = {00070000000000000004000000}
+  end
+  inherited Rectangle1: TRectangle
+    inherited Label3: TLabel
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+    end
+    inherited Image2: TImage
+      MultiResBitmap.Height = 389
+      MultiResBitmap.Width = 641
+      Position.Y = 8.000000000000000000
+    end
+  end
+  inherited Label4: TLabel
+    TextSettings.Font.StyleExt = {00070000000000000004000000}
+  end
+  inherited S: TImage
+    MultiResBitmap.Height = 389
+    MultiResBitmap.Width = 641
+  end
+  inherited buttonLogin: TCornerButton
+    TextSettings.Font.StyleExt = {00070000000000000004000000}
+  end
+  inherited editUsername: TEdit
+    TextSettings.Font.StyleExt = {00070000000000000004000000}
+  end
+end

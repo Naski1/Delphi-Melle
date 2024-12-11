@@ -1,0 +1,14 @@
+program ProjekAbsensi;
+
+uses
+  System.StartUpCopy,
+  FMX.Forms,
+  unitLogin in 'unitLogin.pas' {formLogin};
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.CreateForm(TformLogin, formLogin);
+  Application.Run;
+end.

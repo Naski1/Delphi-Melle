@@ -1,0 +1,263 @@
+unit unitPresensiHarian;
+
+interface
+
+uses
+  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
+  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
+  FMX.Controls.Presentation, FMX.StdCtrls, FMX.Objects, FMX.Memo.Types,
+  FMX.ScrollBox, FMX.Memo, System.ImageList, FMX.ImgList,
+  IdHTTP, IdSSLOpenSSL, System.JSON, System.net.HttpClient;
+
+type
+  TformPresensi = class(TForm)
+    Rectangle1: TRectangle;
+    Label3: TLabel;
+    Label1: TLabel;
+    labelNamaPelatihan: TLabel;
+    Label2: TLabel;
+    labelTanggal: TLabel;
+    buttonHadirPertama: TButton;
+    labelCatatanA: TLabel;
+    memoSesiPertama: TMemo;
+    labelCatatanB: TLabel;
+    memoSesiKedua: TMemo;
+    Image2: TImage;
+    StyleBook1: TStyleBook;
+    ImageList1: TImageList;
+    buttonHadirKedua: TButton;
+    labelStatusA: TLabel;
+    labelStatusB: TLabel;
+    labelAbsensiPertama: TLabel;
+    labelAbsensiKedua: TLabel;
+    procedure FormCreate(Sender: TObject);
+    procedure buttonHadirPertamaClick(Sender: TObject);
+    procedure buttonHadirKeduaClick(Sender: TObject);
+  private
+    { Private declarations }
+    procedure Tampil(IsiJSON: string);
+    procedure editStatus(id_user, id_jadwal, status, catatan: String);
+    var
+      id_jadwalSesiPertama, id_jadwalSesiKedua: String;
+  public
+    { Public declarations }
+  end;
+
+var
+  formPresensi: TformPresensi;
+
+implementation
+
+{$R *.fmx}
+uses
+  unitDashboard, unitLogin;
+
+procedure TformPresensi.FormCreate(Sender: TObject);
+var
+  IdHTTP: TIdHTTP;
+  SSL: TIdSSLIOHandlerSocketOpenSSL;
+  Response: string;
+begin
+
+
+  IdHTTP := TIdHTTP.Create(nil);
+  SSL := TIdSSLIOHandlerSocketOpenSSL.Create(nil);
+  try
+    Response := IdHTTP.Get('http://drive.smknj.sch.id/api.php?type=presensi&id_user=' + formLogin.idPeserta.ToString); // Sesuaikan URL dan parameter id_user
+//    Response := IdHTTP.Get('http://localhost/api_absensi/api.php?type=presensi&id_user=' + formLogin.idPeserta.ToString); // Sesuaikan URL dan parameter id_user
+    Tampil(Response);
+  except
+    on E: Exception do
+      ShowMessage('Error: ' + E.Message);
+  end;
+  IdHTTP.Free;
+  SSL.Free;
+end;
+
+procedure TformPresensi.Tampil(IsiJSON: string);
+var
+  JSONValue: TJSONObject;
+  JSONData: TJSONObject;
+  sesiStatusObj: TJSONObject;
+  Sesi1Status, Sesi2Status, Sesi1Absensi, Sesi2Absensi, CatatanSesi1, CatatanSesi2: string;
+  nama_pelatihan, tanggal: string;
+begin
+  try
+    JSONValue := TJSONObject.ParseJSONValue(IsiJSON) as TJSONObject;
+    if Assigned(JSONValue) then
+    begin
+      if JSONValue.TryGetValue<TJSONObject>('data', JSONData) then
+      begin
+        nama_pelatihan := JSONData.GetValue<string>('nama_pelatihan');
+        tanggal := JSONData.GetValue<string>('tanggal');
+        labelNamaPelatihan.Text := nama_pelatihan;
+        labelTanggal.Text := tanggal;
+        if JSONData.TryGetValue<TJSONObject>('sesi_status', sesiStatusObj) then
+        begin
+          Sesi1Status := sesiStatusObj.GetValue<string>('sesi_1.status');
+          Sesi2Status := sesiStatusObj.GetValue<string>('sesi_2.status');
+          Sesi1Absensi := sesiStatusObj.GetValue<string>('sesi_1.status_absensi');
+          Sesi2Absensi := sesiStatusObj.GetValue<string>('sesi_2.status_absensi');
+          CatatanSesi1 := sesiStatusObj.GetValue<string>('sesi_1.catatan');
+          CatatanSesi2 := sesiStatusObj.GetValue<string>('sesi_2.catatan');
+
+          if Sesi1Status = 'aktif' then
+          begin
+            id_jadwalSesiPertama := sesiStatusObj.GetValue<string>('sesi_1.id_jadwal');
+            labelAbsensiPertama.Text := Sesi1Absensi;
+            labelStatusB.Visible := false;
+            labelCatatanB.Visible := false;
+            labelAbsensiKedua.Visible := false;
+            buttonHadirKedua.Visible := false;
+            memoSesiKedua.Visible := false;
+            if Sesi1Absensi = 'Hadir' then
+            begin
+              memoSesiPertama.Text := CatatanSesi1;
+              buttonHadirPertama.Text := 'UPDATE CATATAN (SESI I)';
+            end
+            else if (Sesi1Absensi = 'Sakit') or (Sesi1Absensi = 'Izin') then
+            begin
+              labelCatatanA.Visible := false;
+              labelStatusA.Visible := false;
+              labelAbsensiPertama.Visible := false;
+              buttonHadirPertama.Visible := false;
+              memoSesiPertama.Visible := false;
+            end;
+
+          end;
+
+          if Sesi2Status = 'aktif' then
+          begin
+            labelStatusB.Visible := true;
+            labelCatatanB.Visible := true;
+            labelAbsensiKedua.Visible := true;
+            buttonHadirKedua.Visible := true;
+            memoSesiKedua.Visible := true;
+            labelAbsensiKedua.Text := Sesi2Absensi;
+            id_jadwalSesiKedua := sesiStatusObj.GetValue<string>('sesi_2.id_jadwal');
+
+            if Sesi2Absensi = 'Hadir' then
+            begin
+              memoSesiKedua.Text := CatatanSesi2;
+              buttonHadirKedua.Text := 'UPDATE CATATAN (SESI II)';
+            end
+            else if (Sesi2Absensi = 'Sakit') or (Sesi2Absensi = 'Izin') then
+            begin
+              labelCatatanB.Visible := false;
+              labelStatusB.Visible := false;
+              labelAbsensiKedua.Visible := false;
+              buttonHadirKedua.Visible := false;
+              memoSesiKedua.Visible := false;
+            end;
+          end;
+
+          if (Sesi1Status = 'belum') and (Sesi2Status = 'belum')  then
+          begin
+            ShowMessage('Tidak ada sesi yang aktif pada hari ini');
+            labelCatatanA.Visible := false;
+            labelCatatanB.Visible := false;
+
+            labelStatusA.Visible := false;
+            labelStatusB.Visible := false;
+
+            labelAbsensiPertama.Visible := false;
+            labelAbsensiKedua.Visible := false;
+
+            buttonHadirPertama.Visible := false;
+            buttonHadirKedua.Visible := false;
+
+            memoSesiPertama.Visible := false;
+            memoSesiKedua.Visible := false;
+          end;
+
+        end
+        else
+        begin
+          ShowMessage('Tidak ada sesi yang aktif untuk hari ini');
+        end;
+      end;
+    end;
+
+  except
+    on E: Exception do
+      ShowMessage('Error: ' + E.Message);
+  end;
+end;
+
+procedure TformPresensi.buttonHadirKeduaClick(Sender: TObject);
+var
+  catatan: String;
+begin
+  if memoSesiKedua.Text = '' then
+  begin
+    ShowMessage('Catatan tidak boleh kosong!');
+    memoSesiKedua.SetFocus;
+  end
+  else
+  begin
+    catatan := StringReplace(memoSesiKedua.Lines.Text, sLineBreak, '\n', [rfReplaceAll]);
+    editStatus(formLogin.idPeserta.ToString, id_jadwalSesiKedua, 'Hadir', catatan);
+    self.Close;
+    Application.CreateForm(TformPresensi, formPresensi);
+    formPresensi.Show;
+  end;
+end;
+
+procedure TformPresensi.buttonHadirPertamaClick(Sender: TObject);
+var
+  catatan: String;
+begin
+  if memoSesiPertama.Text = '' then
+  begin
+    ShowMessage('Catatan tidak boleh kosong!');
+    memoSesiPertama.SetFocus;
+  end
+  else
+  begin
+    catatan := StringReplace(memoSesiPertama.Lines.Text, sLineBreak, '\n', [rfReplaceAll]);
+    editStatus(formLogin.idPeserta.ToString, id_jadwalSesiPertama, 'Hadir', catatan);
+    self.Close;
+    Application.CreateForm(TformPresensi, formPresensi);
+    formPresensi.Show;
+  end;
+
+end;
+
+procedure TformPresensi.editStatus(id_user, id_jadwal, status, catatan: String);
+var
+  IdHTTP: TIdHTTP;
+  SSL: TIdSSLIOHandlerSocketOpenSSL;
+  Response: string;
+  JSON: TStringStream;
+  pesanJSON : string;
+  JSONObj: TJSONObject;
+begin
+  IdHTTP := TIdHTTP.Create(nil);
+  SSL := TIdSSLIOHandlerSocketOpenSSL.Create(nil);
+  try
+    JSON := TStringStream.Create(
+      '{"id_user":"' + id_user + '","id_jadwal":"' + id_jadwal + '","status":"' + status + '","catatan":"' + catatan + '"}',
+      TEncoding.UTF8);
+    try
+      Response := IdHTTP.Put('http://localhost/api_absensi/api.php?type=presensi', JSON);
+      JSONObj := TJSONObject.ParseJSONValue(Response) as TJSONObject;
+      if JSONObj <> nil then
+      try
+        pesanJSON := JSONObj.GetValue<string>('message');
+        ShowMessage(pesanJSON);
+      finally
+        JSONObj.Free;
+      end;
+    finally
+      JSON.Free;
+    end;
+  except
+    on E: Exception do
+      ShowMessage('Error: ' + E.Message);
+  end;
+
+  IdHTTP.Free;
+  SSL.Free;
+end;
+
+end.

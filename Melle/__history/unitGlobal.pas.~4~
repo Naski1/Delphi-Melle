@@ -1,0 +1,14 @@
+unit unitGlobal;
+
+interface
+
+var
+  globalToken: string;
+  ipaddress: string;
+
+implementation
+
+begin
+  ipaddress := '172.21.7.200';
+
+end.

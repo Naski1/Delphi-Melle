@@ -1,0 +1,26 @@
+inherited formLogin_LgXhdpiTb: TformLogin_LgXhdpiTb
+  ClientHeight = 829
+  ClientWidth = 480
+  DesignerMasterStyle = 3
+  inherited btLogin: TImage
+    MultiResBitmap.Height = 69
+    MultiResBitmap.Width = 324
+  end
+  inherited buttonRegister: TLabel
+    TextSettings.Font.StyleExt = {00070000000000000004000000}
+    TabOrder = 10
+  end
+  inherited editPassword: TEdit
+    TextSettings.Font.StyleExt = {00070000000000000004000000}
+  end
+  inherited editUsername: TEdit
+    TextSettings.Font.StyleExt = {00070000000000000004000000}
+  end
+  inherited imageLogo: TImage
+    MultiResBitmap.Height = 104
+    MultiResBitmap.Width = 237
+  end
+  inherited textLogin: TLabel
+    TextSettings.Font.StyleExt = {00070000000000000004000000}
+  end
+end

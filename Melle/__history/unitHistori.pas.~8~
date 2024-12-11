@@ -1,0 +1,81 @@
+unit unitHistori;
+
+interface
+
+uses
+  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
+  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.Layouts,
+  FMX.ListBox, FMX.Controls.Presentation, FMX.StdCtrls, FMX.Objects,
+  FMX.Memo.Types, FMX.ScrollBox, FMX.Memo,
+  IdHTTP, IdSSLOpenSSL, System.JSON, System.net.HttpClient;
+
+type
+  TformHistori = class(TForm)
+    layoutData: TLayout;
+    Label1: TLabel;
+    Label2: TLabel;
+    labelHari: TLabel;
+    labelTanggal: TLabel;
+    Label4: TLabel;
+    labelSesi: TLabel;
+    Label6: TLabel;
+    Label7: TLabel;
+    labelStatus: TLabel;
+    labelMateri: TLabel;
+    listBoxData: TListBox;
+    Label3: TLabel;
+    Image2: TImage;
+    Label5: TLabel;
+    Memo1: TMemo;
+    procedure FormCreate(Sender: TObject);
+  private
+    { Private declarations }
+    procedure addItem(hari, tanggal, sesi, materi, status, catatan: string);
+    procedure TampilList(IsiJSON: string);
+  public
+    { Public declarations }
+  end;
+
+var
+  formHistori: TformHistori;
+
+implementation
+
+{$R *.fmx}
+
+uses
+  unitLogin;
+
+{ TformHistori }
+
+procedure TformHistori.addItem(hari, tanggal, sesi, materi, status, catatan: string);
+begin
+
+end;
+
+procedure TformHistori.FormCreate(Sender: TObject);
+var
+  IdHTTP: TIdHTTP;
+  SSL: TIdSSLIOHandlerSocketOpenSSL;
+  Response: string;
+begin
+  layoutData.Visible := False;
+  IdHTTP := TIdHTTP.Create(nil);
+  SSL := TIdSSLIOHandlerSocketOpenSSL.Create(nil);
+  try
+    Response := IdHTTP.Get('http://localhost/api_absensi/api.php?type=jadwal&id_user=' + formLogin.idPeserta.ToString); // Sesuaikan URL dan parameter id_user
+    TampilList(Response);
+  except
+    on E: Exception do
+//      ShowMessage('Error: ' + E.Message);
+  end;
+  IdHTTP.Free;
+  SSL.Free;
+end;
+
+procedure TformHistori.TampilList(IsiJSON: string);
+begin
+
+end;
+
+end.
